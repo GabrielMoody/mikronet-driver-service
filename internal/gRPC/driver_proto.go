@@ -30,8 +30,13 @@ func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Driv
 	}
 
 	var drivers []*pb.Driver
+	var imageUrl string
 
 	for _, v := range resRepo {
+		if v.ProfilePicture != "" {
+			imageUrl = os.Getenv("BASE_URL") + "/api/driver/images/" + v.ID
+		}
+
 		drivers = append(drivers, &pb.Driver{
 			Id:            v.ID,
 			Name:          v.Name,
@@ -39,8 +44,11 @@ func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Driv
 			PhoneNumber:   v.PhoneNumber,
 			LicenseNumber: v.LicenseNumber,
 			Sim:           v.SIM,
-			ImageUrl:      os.Getenv("BASE_URL") + "/api/driver/images/" + v.ID,
+			Verified:      v.Verified,
+			ImageUrl:      imageUrl,
 		})
+
+		imageUrl = ""
 	}
 
 	return &pb.Drivers{
@@ -68,6 +76,7 @@ func (a *GRPC) GetDriverDetails(ctx context.Context, data *pb.ReqByID) (res *pb.
 		PhoneNumber:   resRepo.PhoneNumber,
 		LicenseNumber: resRepo.LicenseNumber,
 		Sim:           resRepo.SIM,
+		Verified:      resRepo.Verified,
 		ImageUrl:      imageurl,
 	}, nil
 }

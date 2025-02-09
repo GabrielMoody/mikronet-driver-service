@@ -6,14 +6,16 @@ import (
 
 	"github.com/GabrielMoody/mikronet-driver-service/internal/helper"
 	"github.com/GabrielMoody/mikronet-driver-service/internal/model"
+	"github.com/GabrielMoody/mikronet-driver-service/internal/pb"
 	"gorm.io/gorm"
 )
 
 type DriverRepo interface {
 	CreateDriver(c context.Context, data model.DriverDetails) (model.DriverDetails, error)
-	GetAllDrivers(c context.Context, verified *bool) ([]model.DriverDetails, error)
+	GetAllDrivers(c context.Context, verified *pb.ReqDrivers) ([]model.DriverDetails, error)
 	GetDriverDetails(c context.Context, id string) (model.DriverDetails, error)
 	EditDriverDetails(c context.Context, user model.DriverDetails) (model.DriverDetails, error)
+	DeleteDriver(c context.Context, id string) (model.DriverDetails, error)
 	GetStatus(c context.Context, id string) (res interface{}, err error)
 	SetStatus(c context.Context, status string, id string) (res interface{}, err error)
 	SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error)
@@ -22,6 +24,15 @@ type DriverRepo interface {
 
 type DriverRepoImpl struct {
 	db *gorm.DB
+}
+
+func (a *DriverRepoImpl) DeleteDriver(c context.Context, id string) (res model.DriverDetails, err error) {
+	if err := a.db.WithContext(c).Delete(&res, "id = ?", id).Error; err != nil {
+		return res, helper.ErrDatabase
+	}
+
+	return res, nil
+
 }
 
 func (a *DriverRepoImpl) SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error) {
@@ -40,12 +51,17 @@ func (a *DriverRepoImpl) CreateDriver(c context.Context, data model.DriverDetail
 	return data, nil
 }
 
-func (a *DriverRepoImpl) GetAllDrivers(c context.Context, verified *bool) (res []model.DriverDetails, err error) {
-	if verified != nil {
-		if err := a.db.WithContext(c).Find(&res, "verified = ?", verified).Error; err != nil {
+func (a *DriverRepoImpl) GetAllDrivers(c context.Context, verified *pb.ReqDrivers) (res []model.DriverDetails, err error) {
+	switch v := verified.Verified.(type) {
+	case *pb.ReqDrivers_IsVerified:
+		if err := a.db.WithContext(c).Find(&res, "verified = ?", v.IsVerified).Error; err != nil {
 			return res, helper.ErrDatabase
 		}
-	} else {
+	case *pb.ReqDrivers_NotVerified:
+		if err := a.db.WithContext(c).Find(&res, "verified = ?", v.NotVerified).Error; err != nil {
+			return res, helper.ErrDatabase
+		}
+	default:
 		if err := a.db.WithContext(c).Find(&res).Error; err != nil {
 			return res, helper.ErrDatabase
 		}

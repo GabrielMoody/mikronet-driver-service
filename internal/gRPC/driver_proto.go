@@ -23,16 +23,17 @@ func NewgRPC(repo repository.DriverRepo) *GRPC {
 }
 
 func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Drivers, err error) {
-	resRepo, err := a.repo.GetAllDrivers(ctx, &req.Verified)
+	resRepo, err := a.repo.GetAllDrivers(ctx, req)
 
 	if err != nil {
 		return nil, err
 	}
 
 	var drivers []*pb.Driver
-	var imageUrl string
 
 	for _, v := range resRepo {
+		var imageUrl string
+
 		if v.ProfilePicture != "" {
 			imageUrl = os.Getenv("BASE_URL") + "/api/driver/images/" + v.ID
 		}
@@ -47,8 +48,6 @@ func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Driv
 			Verified:      v.Verified,
 			ImageUrl:      imageUrl,
 		})
-
-		imageUrl = ""
 	}
 
 	return &pb.Drivers{
@@ -133,5 +132,17 @@ func (a *GRPC) SetStatusVerified(ctx context.Context, data *pb.ReqByID) (res *pb
 	return &pb.Driver{
 		Id:       resRepo.ID,
 		Verified: resRepo.Verified,
+	}, nil
+}
+
+func (a *GRPC) DeleteDriver(ctx context.Context, id *pb.ReqByID) (res *pb.Driver, err error) {
+	resRepo, err := a.repo.DeleteDriver(ctx, id.Id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.Driver{
+		Id: resRepo.ID,
 	}, nil
 }

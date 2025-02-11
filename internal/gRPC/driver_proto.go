@@ -42,11 +42,11 @@ func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Driv
 			Id:            v.ID,
 			Name:          v.Name,
 			Email:         v.Email,
-			PhoneNumber:   v.PhoneNumber,
-			LicenseNumber: v.LicenseNumber,
-			Sim:           v.SIM,
-			Verified:      v.Verified,
-			ImageUrl:      imageUrl,
+			PhoneNumber:   &v.PhoneNumber,
+			LicenseNumber: &v.LicenseNumber,
+			Sim:           &v.SIM,
+			Verified:      &v.Verified,
+			ImageUrl:      &imageUrl,
 		})
 	}
 
@@ -72,11 +72,11 @@ func (a *GRPC) GetDriverDetails(ctx context.Context, data *pb.ReqByID) (res *pb.
 		Id:            resRepo.ID,
 		Name:          resRepo.Name,
 		Email:         resRepo.Email,
-		PhoneNumber:   resRepo.PhoneNumber,
-		LicenseNumber: resRepo.LicenseNumber,
-		Sim:           resRepo.SIM,
-		Verified:      resRepo.Verified,
-		ImageUrl:      imageurl,
+		PhoneNumber:   &resRepo.PhoneNumber,
+		LicenseNumber: &resRepo.LicenseNumber,
+		Sim:           &resRepo.SIM,
+		Verified:      &resRepo.Verified,
+		ImageUrl:      &imageurl,
 	}, nil
 }
 
@@ -113,9 +113,9 @@ func (a *GRPC) CreateDriver(ctx context.Context, data *pb.CreateDriverRequest) (
 		Id:            resRepo.ID,
 		Name:          resRepo.Name,
 		Email:         resRepo.Email,
-		PhoneNumber:   resRepo.PhoneNumber,
-		LicenseNumber: resRepo.LicenseNumber,
-		Sim:           resRepo.SIM,
+		PhoneNumber:   &resRepo.PhoneNumber,
+		LicenseNumber: &resRepo.LicenseNumber,
+		Sim:           &resRepo.SIM,
 	}, nil
 }
 
@@ -131,7 +131,7 @@ func (a *GRPC) SetStatusVerified(ctx context.Context, data *pb.ReqByID) (res *pb
 
 	return &pb.Driver{
 		Id:       resRepo.ID,
-		Verified: resRepo.Verified,
+		Verified: &resRepo.Verified,
 	}, nil
 }
 

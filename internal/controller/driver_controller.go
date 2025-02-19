@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -18,10 +19,50 @@ type DriverController interface {
 	SetStatus(c *fiber.Ctx) error
 	GetTripHistories(c *fiber.Ctx) error
 	GetImage(c *fiber.Ctx) error
+	GetAllDriverLastSeen(c *fiber.Ctx) error
+	SetDriverLastSeen(c *fiber.Ctx) error
 }
 
 type DriverControllerImpl struct {
 	service service.DriverService
+}
+
+func (a *DriverControllerImpl) GetAllDriverLastSeen(c *fiber.Ctx) error {
+	ctx := c.Context()
+
+	res, err := a.service.GetAllLastSeen(ctx)
+
+	if err != nil {
+		return c.Status(err.Code).JSON(fiber.Map{
+			"status": "error",
+			"errors": err,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status": "Success",
+		"data":   res,
+	})
+}
+
+func (a *DriverControllerImpl) SetDriverLastSeen(c *fiber.Ctx) error {
+	token := c.Get("Authorization")
+
+	payload, _ := middleware.GetJWTPayload(token[7:], os.Getenv("JWT_SECRET"))
+	ctx := c.Context()
+
+	_, err := a.service.SetLastSeen(ctx, payload["id"].(string))
+
+	if err != nil {
+		return c.Status(err.Code).JSON(fiber.Map{
+			"status": "error",
+			"errors": err,
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status": "Success",
+	})
 }
 
 func (a *DriverControllerImpl) GetImage(c *fiber.Ctx) error {
@@ -101,18 +142,49 @@ func (a *DriverControllerImpl) EditDriver(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := a.service.EditDriverDetails(ctx, payload["id"].(string), data)
+	image, err := c.FormFile("profile_picture")
+	if err == nil {
+		// Save the image if it exists
+		imagePath := fmt.Sprintf("./images/%s.jpg", payload["id"].(string))
+		file, err := image.Open()
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status": "error",
+				"errors": err.Error(),
+			})
+		}
+		defer file.Close()
 
-	if err != nil {
-		return c.Status(err.Code).JSON(fiber.Map{
+		out, err := os.Create(imagePath)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status": "error",
+				"errors": err.Error(),
+			})
+		}
+		defer out.Close()
+
+		_, err = io.Copy(out, file)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status": "error",
+				"errors": err.Error(),
+			})
+		}
+	}
+
+	_, errService := a.service.EditDriverDetails(ctx, payload["id"].(string), data)
+
+	if errService != nil {
+		return c.Status(errService.Code).JSON(fiber.Map{
 			"status": "error",
 			"errors": err,
 		})
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"status": "Success",
-		"data":   res,
+		"status":  "Success",
+		"message": "Data berhasil diperbarui!",
 	})
 }
 

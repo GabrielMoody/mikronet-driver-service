@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/GabrielMoody/mikronet-driver-service/internal/dto"
 	"github.com/GabrielMoody/mikronet-driver-service/internal/helper"
@@ -15,17 +16,44 @@ import (
 type DriverService interface {
 	GetDriverDetails(c context.Context, id string) (res dto.GetDriverDetailsRes, err *helper.ErrorStruct)
 	GetDriverImage(c context.Context, id string) (res string, err *helper.ErrorStruct)
-	EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res interface{}, err *helper.ErrorStruct)
+	EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res model.DriverDetails, err *helper.ErrorStruct)
 	GetStatus(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
 	SetStatus(c context.Context, id string, data dto.StatusReq) (res interface{}, err *helper.ErrorStruct)
 	GetTripHistories(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
 	GetImage(c context.Context, id string) (res string, err *helper.ErrorStruct)
+	GetAllLastSeen(c context.Context) (res []model.DriverDetails, err *helper.ErrorStruct)
+	SetLastSeen(c context.Context, id string) (res *time.Time, err *helper.ErrorStruct)
 }
 
 type driverServiceImpl struct {
 	repo repository.DriverRepo
 }
 
+func (a *driverServiceImpl) GetAllLastSeen(c context.Context) (res []model.DriverDetails, err *helper.ErrorStruct) {
+	resRepo, errRepo := a.repo.GetAllDriverLastSeen(c)
+
+	if errRepo != nil {
+		return nil, &helper.ErrorStruct{
+			Err:  errRepo,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return resRepo, nil
+}
+
+func (a *driverServiceImpl) SetLastSeen(c context.Context, id string) (res *time.Time, err *helper.ErrorStruct) {
+	resRepo, errRepo := a.repo.SetLastSeen(c, id)
+
+	if errRepo != nil {
+		return res, &helper.ErrorStruct{
+			Err:  errRepo,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return resRepo, nil
+}
 func (a *driverServiceImpl) GetImage(c context.Context, id string) (res string, err *helper.ErrorStruct) {
 	resRepo, errRepo := a.repo.GetDriverDetails(c, id)
 
@@ -106,9 +134,9 @@ func (a *driverServiceImpl) GetDriverDetails(c context.Context, id string) (res 
 	}, nil
 }
 
-func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res interface{}, err *helper.ErrorStruct) {
+func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res model.DriverDetails, err *helper.ErrorStruct) {
 	if err := helper.Validate.Struct(&data); err != nil {
-		return nil, &helper.ErrorStruct{
+		return res, &helper.ErrorStruct{
 			Code: fiber.StatusBadRequest,
 			Err:  err,
 		}
@@ -124,7 +152,7 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 	resRepo, errRepo := a.repo.EditDriverDetails(c, driver)
 
 	if errRepo != nil {
-		return nil, &helper.ErrorStruct{
+		return res, &helper.ErrorStruct{
 			Err:  errRepo,
 			Code: http.StatusInternalServerError,
 		}

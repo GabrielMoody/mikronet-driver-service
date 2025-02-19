@@ -20,10 +20,28 @@ type DriverRepo interface {
 	SetStatus(c context.Context, status string, id string) (res interface{}, err error)
 	SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error)
 	GetTripHistories(c context.Context, id string) (res interface{}, err error)
+	GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error)
+	SetLastSeen(c context.Context, id string) (res *time.Time, err error)
 }
 
 type DriverRepoImpl struct {
 	db *gorm.DB
+}
+
+func (a *DriverRepoImpl) GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error) {
+	if err := a.db.WithContext(c).Find(&res).Where("last_seen >= ?", time.Now().Add(-5*time.Minute)).Scan(&res).Error; err != nil {
+		return nil, helper.ErrDatabase
+	}
+
+	return res, nil
+}
+
+func (a *DriverRepoImpl) SetLastSeen(c context.Context, id string) (res *time.Time, err error) {
+	if err := a.db.WithContext(c).Model(&model.DriverDetails{}).Where("id = ?", id).Update("last_seen", time.Now()).Error; err != nil {
+		return res, helper.ErrDatabase
+	}
+
+	return res, nil
 }
 
 func (a *DriverRepoImpl) DeleteDriver(c context.Context, id string) (res model.DriverDetails, err error) {
@@ -32,7 +50,6 @@ func (a *DriverRepoImpl) DeleteDriver(c context.Context, id string) (res model.D
 	}
 
 	return res, nil
-
 }
 
 func (a *DriverRepoImpl) SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error) {
@@ -78,12 +95,12 @@ func (a *DriverRepoImpl) GetDriverDetails(c context.Context, id string) (res mod
 	return res, nil
 }
 
-func (a *DriverRepoImpl) EditDriverDetails(c context.Context, user model.DriverDetails) (res model.DriverDetails, err error) {
-	if err := a.db.WithContext(c).Updates(&user).Error; err != nil {
-		return user, helper.ErrDatabase
+func (a *DriverRepoImpl) EditDriverDetails(c context.Context, driver model.DriverDetails) (res model.DriverDetails, err error) {
+	if err := a.db.WithContext(c).Updates(&driver).Error; err != nil {
+		return driver, helper.ErrDatabase
 	}
 
-	return user, nil
+	return driver, nil
 }
 
 func (a *DriverRepoImpl) GetTripHistories(c context.Context, id string) (res interface{}, err error) {

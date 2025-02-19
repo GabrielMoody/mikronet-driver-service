@@ -18,6 +18,7 @@ func DriverHandler(r fiber.Router, db *gorm.DB) {
 	api := r.Group("/")
 
 	api.Get("/images/:id", controllerDriver.GetImage)
+	api.Get("/online", controllerDriver.GetAllDriverLastSeen)
 
 	api.Use(middleware.ValidateDriverRole)
 
@@ -25,6 +26,8 @@ func DriverHandler(r fiber.Router, db *gorm.DB) {
 	api.Put("/", controllerDriver.EditDriver)
 	api.Get("/status/", controllerDriver.GetStatus)
 	api.Put("/status/", controllerDriver.SetStatus)
+
+	api.Post("/heartbeat/", controllerDriver.SetDriverLastSeen)
 }
 
 func GRPCHandler(db *gorm.DB) *gRPC.GRPC {

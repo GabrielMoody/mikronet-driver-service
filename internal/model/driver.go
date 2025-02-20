@@ -6,18 +6,17 @@ import (
 
 type DriverDetails struct {
 	ID             string `gorm:"column:id;primaryKey;type:varchar(255)" json:"id"`
-	OwnerID        string `gorm:"column:owner_id;type:varchar(255)" json:"owner_id"`
 	Email          string `gorm:"column:email;type:varchar(255)" json:"email"`
 	Name           string `gorm:"column:name;type:varchar(255)" json:"name"`
 	PhoneNumber    string `gorm:"column:phone_number;type:varchar(255)" json:"phone_number"`
 	RouteID        *uint  `gorm:"foreignKey:RouteID;references:ID;"`
 	Route          Route
-	LicenseNumber  string    `gorm:"column:license_number;type:varchar(255)" json:"license_number" form:"license_number"`
-	SIM            string    `gorm:"column:sim;type:varchar(255)" json:"sim" form:"sim"`
-	Status         string    `gorm:"column:status;type:varchar(255)" json:"status" form:"status"`
-	Verified       bool      `gorm:"column:verified;default:false" json:"verified" form:"verified"`
-	ProfilePicture string    `gorm:"column:profile_picture" json:"profile_picture" form:"photo"`
-	LastSeen       time.Time `gorm:"column:last_seen" json:"last_seen"`
+	LicenseNumber  string `gorm:"column:license_number;type:varchar(255)" json:"license_number" form:"license_number"`
+	SIM            string `gorm:"column:sim;type:varchar(255)" json:"sim" form:"sim"`
+	Status         string `gorm:"column:status;type:varchar(255)" json:"status" form:"status"`
+	Verified       bool   `gorm:"column:verified;default:false" json:"verified" form:"verified"`
+	ProfilePicture string `gorm:"column:profile_picture" json:"profile_picture" form:"photo"`
+	// LastSeen       time.Time `gorm:"column:last_seen" json:"last_seen"`
 }
 
 type Route struct {

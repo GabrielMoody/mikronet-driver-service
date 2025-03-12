@@ -39,9 +39,9 @@ func (a *GRPC) GetDrivers(ctx context.Context, req *pb.ReqDrivers) (res *pb.Driv
 		}
 
 		drivers = append(drivers, &pb.Driver{
-			Id:            v.ID,
-			Name:          v.Name,
-			Email:         v.Email,
+			Id:   v.ID,
+			Name: v.Name,
+			// Email:         v.Email,
 			PhoneNumber:   &v.PhoneNumber,
 			LicenseNumber: &v.LicenseNumber,
 			Sim:           &v.SIM,
@@ -69,9 +69,9 @@ func (a *GRPC) GetDriverDetails(ctx context.Context, data *pb.ReqByID) (res *pb.
 	}
 
 	return &pb.Driver{
-		Id:            resRepo.ID,
-		Name:          resRepo.Name,
-		Email:         resRepo.Email,
+		Id:   resRepo.ID,
+		Name: resRepo.Name,
+		// Email:         resRepo.Email,
 		PhoneNumber:   &resRepo.PhoneNumber,
 		LicenseNumber: &resRepo.LicenseNumber,
 		Sim:           &resRepo.SIM,
@@ -96,9 +96,9 @@ func (a *GRPC) CreateDriver(ctx context.Context, data *pb.CreateDriverRequest) (
 	}
 
 	resRepo, err := a.repo.CreateDriver(ctx, model.DriverDetails{
-		ID:             data.Id,
-		Name:           data.Name,
-		Email:          data.Email,
+		ID:   data.Id,
+		Name: data.Name,
+		// Email:          data.Email,
 		PhoneNumber:    data.PhoneNumber,
 		LicenseNumber:  data.LicenseNumber,
 		SIM:            data.Sim,
@@ -110,28 +110,12 @@ func (a *GRPC) CreateDriver(ctx context.Context, data *pb.CreateDriverRequest) (
 	}
 
 	return &pb.Driver{
-		Id:            resRepo.ID,
-		Name:          resRepo.Name,
-		Email:         resRepo.Email,
+		Id:   resRepo.ID,
+		Name: resRepo.Name,
+		// Email:         resRepo.Email,
 		PhoneNumber:   &resRepo.PhoneNumber,
 		LicenseNumber: &resRepo.LicenseNumber,
 		Sim:           &resRepo.SIM,
-	}, nil
-}
-
-func (a *GRPC) SetStatusVerified(ctx context.Context, data *pb.ReqByID) (res *pb.Driver, err error) {
-	resRepo, err := a.repo.SetVerified(ctx, model.DriverDetails{
-		ID:       data.Id,
-		Verified: true,
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.Driver{
-		Id:       resRepo.ID,
-		Verified: &resRepo.Verified,
 	}, nil
 }
 

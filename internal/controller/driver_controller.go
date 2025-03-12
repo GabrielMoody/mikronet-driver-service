@@ -10,6 +10,7 @@ import (
 	"github.com/GabrielMoody/mikronet-driver-service/internal/middleware"
 	"github.com/GabrielMoody/mikronet-driver-service/internal/service"
 	"github.com/gofiber/fiber/v2"
+	"github.com/skip2/go-qrcode"
 )
 
 type DriverController interface {
@@ -21,10 +22,39 @@ type DriverController interface {
 	GetImage(c *fiber.Ctx) error
 	GetAllDriverLastSeen(c *fiber.Ctx) error
 	SetDriverLastSeen(c *fiber.Ctx) error
+	GetQrisData(c *fiber.Ctx) error
 }
 
 type DriverControllerImpl struct {
 	service service.DriverService
+}
+
+func (a *DriverControllerImpl) GetQrisData(c *fiber.Ctx) error {
+	token := c.Get("Authorization")
+	payload, _ := middleware.GetJWTPayload(token[7:], os.Getenv("JWT_SECRET"))
+	ctx := c.Context()
+
+	res, err := a.service.GetQrisData(ctx, payload["id"].(string))
+
+	if err != nil {
+		return c.Status(err.Code).JSON(fiber.Map{
+			"status": "error",
+			"errors": err,
+		})
+	}
+
+	code, errQr := qrcode.Encode(res, qrcode.Medium, 256)
+
+	if errQr != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "error",
+			"errors": errQr,
+		})
+	}
+
+	c.Response().Header.Set("Content-Type", "image/png")
+
+	return c.Status(fiber.StatusOK).Send(code)
 }
 
 func (a *DriverControllerImpl) GetAllDriverLastSeen(c *fiber.Ctx) error {

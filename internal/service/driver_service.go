@@ -23,10 +23,24 @@ type DriverService interface {
 	GetImage(c context.Context, id string) (res string, err *helper.ErrorStruct)
 	GetAllLastSeen(c context.Context) (res []model.DriverDetails, err *helper.ErrorStruct)
 	SetLastSeen(c context.Context, id string) (res *time.Time, err *helper.ErrorStruct)
+	GetQrisData(c context.Context, id string) (res string, err *helper.ErrorStruct)
 }
 
 type driverServiceImpl struct {
 	repo repository.DriverRepo
+}
+
+func (a *driverServiceImpl) GetQrisData(c context.Context, id string) (res string, err *helper.ErrorStruct) {
+	resRepo, errRepo := a.repo.GetQrisData(c, id)
+
+	if errRepo != nil {
+		return res, &helper.ErrorStruct{
+			Err:  errRepo,
+			Code: http.StatusInternalServerError,
+		}
+	}
+
+	return *resRepo, nil
 }
 
 func (a *driverServiceImpl) GetAllLastSeen(c context.Context) (res []model.DriverDetails, err *helper.ErrorStruct) {
@@ -125,9 +139,9 @@ func (a *driverServiceImpl) GetDriverDetails(c context.Context, id string) (res 
 	}
 
 	return dto.GetDriverDetailsRes{
-		ID:             resRepo.ID,
-		Name:           resRepo.Name,
-		Email:          resRepo.Email,
+		ID:   resRepo.ID,
+		Name: resRepo.Name,
+		// Email:          resRepo.Email,
 		LicenseNumber:  resRepo.LicenseNumber,
 		SIM:            resRepo.SIM,
 		ProfilePicture: resRepo.ProfilePicture,

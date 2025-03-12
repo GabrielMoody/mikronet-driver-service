@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/GabrielMoody/mikronet-driver-service/internal/helper"
@@ -18,14 +19,34 @@ type DriverRepo interface {
 	DeleteDriver(c context.Context, id string) (model.DriverDetails, error)
 	GetStatus(c context.Context, id string) (res interface{}, err error)
 	SetStatus(c context.Context, status string, id string) (res interface{}, err error)
-	SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error)
 	GetTripHistories(c context.Context, id string) (res interface{}, err error)
 	GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error)
 	SetLastSeen(c context.Context, id string) (res *time.Time, err error)
+	GetQrisData(c context.Context, id string) (res *string, err error)
 }
 
 type DriverRepoImpl struct {
 	db *gorm.DB
+}
+
+func generateQrisData(id string) *string {
+	qr := fmt.Sprintf("0002010102115802ID6006Manado6208%s530336054060006304A1B2", id)
+	return &qr
+}
+
+func (a *DriverRepoImpl) GetQrisData(c context.Context, id string) (res *string, err error) {
+	if err := a.db.WithContext(c).Model(&model.DriverDetails{}).Select("qris_data").Where("id = ?", id).Scan(&res).Error; err != nil {
+		return res, helper.ErrDatabase
+	}
+
+	if res == nil {
+		res = generateQrisData(id)
+		if err := a.db.WithContext(c).Model(&model.DriverDetails{}).Where("id = ?", id).Update("qris_data", res).Error; err != nil {
+			return res, helper.ErrDatabase
+		}
+	}
+
+	return res, nil
 }
 
 func (a *DriverRepoImpl) GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error) {
@@ -50,14 +71,6 @@ func (a *DriverRepoImpl) DeleteDriver(c context.Context, id string) (res model.D
 	}
 
 	return res, nil
-}
-
-func (a *DriverRepoImpl) SetVerified(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error) {
-	if err := a.db.WithContext(c).Updates(&data).Error; err != nil {
-		return res, helper.ErrDatabase
-	}
-
-	return data, nil
 }
 
 func (a *DriverRepoImpl) CreateDriver(c context.Context, data model.DriverDetails) (res model.DriverDetails, err error) {

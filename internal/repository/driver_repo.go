@@ -19,7 +19,7 @@ type DriverRepo interface {
 	DeleteDriver(c context.Context, id string) (model.DriverDetails, error)
 	GetStatus(c context.Context, id string) (res interface{}, err error)
 	SetStatus(c context.Context, status string, id string) (res interface{}, err error)
-	GetTripHistories(c context.Context, id string) (res interface{}, err error)
+	GetTripHistories(c context.Context, id string) (res []model.Transaction, err error)
 	GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error)
 	SetLastSeen(c context.Context, id string) (res *time.Time, err error)
 	GetQrisData(c context.Context, id string) (res *string, err error)
@@ -116,36 +116,12 @@ func (a *DriverRepoImpl) EditDriverDetails(c context.Context, driver model.Drive
 	return driver, nil
 }
 
-func (a *DriverRepoImpl) GetTripHistories(c context.Context, id string) (res interface{}, err error) {
-	row, err := a.db.WithContext(c).Table("trips").
-		Select("trips.location, trips.destination, trips.trip_date, reviews.review, reviews.star").
-		Joins("JOIN reviews ON trips.id = reviews.id").
-		Where("trips.driver_id = ?", id).
-		Rows()
-
-	if err != nil {
+func (a *DriverRepoImpl) GetTripHistories(c context.Context, id string) (res []model.Transaction, err error) {
+	if err := a.db.WithContext(c).Find(&res, "driver_id = ?", id).Error; err != nil {
 		return nil, helper.ErrDatabase
 	}
 
-	defer row.Close()
-
-	type data struct {
-		Location    string
-		Destination string
-		TripDate    time.Time
-		Review      string
-		Star        int64
-	}
-
-	var d data
-	var trip []data
-
-	for row.Next() {
-		_ = row.Scan(&d.Location, &d.Destination, &d.TripDate, &d.Review, &d.Star)
-		trip = append(trip, d)
-	}
-
-	return trip, nil
+	return res, nil
 }
 
 func (a *DriverRepoImpl) GetStatus(c context.Context, id string) (res interface{}, err error) {

@@ -104,6 +104,7 @@ func (a *DriverRepoImpl) GetDriverDetails(c context.Context, id string) (res mod
 	if err := a.db.WithContext(c).Table("driver_details").
 		Select("driver_details.id as id, users.email, driver_details.name, driver_details.phone_number, driver_details.license_number, driver_details.sim, driver_details.verified, driver_details.profile_picture").
 		Joins("JOIN users ON users.id = driver_details.id").
+		Where("driver_details.id = ?", id).
 		Scan(&res).Error; err != nil {
 		return res, helper.ErrDatabase
 	}

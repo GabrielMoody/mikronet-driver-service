@@ -139,9 +139,9 @@ func (a *driverServiceImpl) GetDriverDetails(c context.Context, id string) (res 
 	}
 
 	return dto.GetDriverDetailsRes{
-		ID:   resRepo.ID,
-		Name: resRepo.Name,
-		// Email:          resRepo.Email,
+		ID:             resRepo.ID,
+		Name:           resRepo.Name,
+		Email:          resRepo.Email,
 		LicenseNumber:  resRepo.LicenseNumber,
 		SIM:            resRepo.SIM,
 		ProfilePicture: resRepo.ProfilePicture,

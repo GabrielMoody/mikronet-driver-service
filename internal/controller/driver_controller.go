@@ -108,11 +108,6 @@ func (a *DriverControllerImpl) GetImage(c *fiber.Ctx) error {
 		})
 	}
 
-	var extension = map[string]string{
-		"image/jpeg": "jpg",
-		"image/png":  "png",
-	}
-
 	img, errI := os.ReadFile(res)
 
 	if errI != nil {
@@ -124,7 +119,7 @@ func (a *DriverControllerImpl) GetImage(c *fiber.Ctx) error {
 
 	ext := http.DetectContentType(img)
 
-	c.Response().Header.Set("Content-Type", fmt.Sprintf("image/%s", extension[ext]))
+	c.Response().Header.Set("Content-Type", ext)
 
 	return c.Status(fiber.StatusOK).Send(img)
 }
@@ -175,7 +170,7 @@ func (a *DriverControllerImpl) EditDriver(c *fiber.Ctx) error {
 	image, err := c.FormFile("profile_picture")
 	if err == nil {
 		// Save the image if it exists
-		imagePath := fmt.Sprintf("./images/%s.jpg", payload["id"].(string))
+		imagePath := fmt.Sprintf("./uploads/%s.jpg", payload["id"].(string))
 		file, err := image.Open()
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

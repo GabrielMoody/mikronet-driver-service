@@ -14,7 +14,7 @@ import (
 type DriverRepo interface {
 	CreateDriver(c context.Context, data model.DriverDetails) (model.DriverDetails, error)
 	GetAllDrivers(c context.Context, verified *pb.ReqDrivers) ([]model.DriverDetails, error)
-	GetDriverDetails(c context.Context, id string) (model.DriverDetails, error)
+	GetDriverDetails(c context.Context, id string) (model.Drivers, error)
 	EditDriverDetails(c context.Context, user model.DriverDetails) (model.DriverDetails, error)
 	DeleteDriver(c context.Context, id string) (model.DriverDetails, error)
 	GetStatus(c context.Context, id string) (res interface{}, err error)
@@ -100,9 +100,12 @@ func (a *DriverRepoImpl) GetAllDrivers(c context.Context, verified *pb.ReqDriver
 	return res, nil
 }
 
-func (a *DriverRepoImpl) GetDriverDetails(c context.Context, id string) (res model.DriverDetails, err error) {
-	if err := a.db.WithContext(c).First(&res, "id = ?", id).Error; err != nil {
-		return res, helper.ErrNotFound
+func (a *DriverRepoImpl) GetDriverDetails(c context.Context, id string) (res model.Drivers, err error) {
+	if err := a.db.WithContext(c).Table("driver_details").
+		Select("driver_details.id as id, users.email, driver_details.name, driver_details.phone_number, driver_details.license_number, driver_details.sim, driver_details.verified, driver_details.profile_picture").
+		Joins("JOIN users ON users.id = driver_details.id").
+		Scan(&res).Error; err != nil {
+		return res, helper.ErrDatabase
 	}
 
 	return res, nil

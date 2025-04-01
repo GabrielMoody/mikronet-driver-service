@@ -1,8 +1,9 @@
 package controller
 
 import (
-	"fmt"
+	"errors"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 
@@ -27,6 +28,21 @@ type DriverController interface {
 
 type DriverControllerImpl struct {
 	service service.DriverService
+}
+
+func readImage(image *multipart.FileHeader) ([]byte, error) {
+	f, err := image.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	fileData, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return fileData, nil
 }
 
 func (a *DriverControllerImpl) GetQrisData(c *fiber.Ctx) error {
@@ -168,37 +184,22 @@ func (a *DriverControllerImpl) EditDriver(c *fiber.Ctx) error {
 	}
 
 	image, err := c.FormFile("profile_picture")
-	if err == nil {
-		// Save the image if it exists
-		imagePath := fmt.Sprintf("./uploads/%s.jpg", payload["id"].(string))
-		file, err := image.Open()
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": "error",
-				"errors": err.Error(),
-			})
-		}
-		defer file.Close()
-
-		out, err := os.Create(imagePath)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": "error",
-				"errors": err.Error(),
-			})
-		}
-		defer out.Close()
-
-		_, err = io.Copy(out, file)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"status": "error",
-				"errors": err.Error(),
-			})
-		}
+	if err != nil && !errors.Is(err, http.ErrMissingFile) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "error",
+			"errors": "error reading image",
+		})
 	}
 
-	_, errService := a.service.EditDriverDetails(ctx, payload["id"].(string), data)
+	fileDataPP, err := readImage(image)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status": "error",
+			"errors": err.Error(),
+		})
+	}
+
+	_, errService := a.service.EditDriverDetails(ctx, payload["id"].(string), data, fileDataPP)
 
 	if errService != nil {
 		return c.Status(errService.Code).JSON(fiber.Map{

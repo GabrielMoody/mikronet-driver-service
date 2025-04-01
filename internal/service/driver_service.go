@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/GabrielMoody/mikronet-driver-service/internal/dto"
@@ -16,7 +18,7 @@ import (
 type DriverService interface {
 	GetDriverDetails(c context.Context, id string) (res dto.GetDriverDetailsRes, err *helper.ErrorStruct)
 	GetDriverImage(c context.Context, id string) (res string, err *helper.ErrorStruct)
-	EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res model.DriverDetails, err *helper.ErrorStruct)
+	EditDriverDetails(c context.Context, id string, data dto.EditDriverReq, image []byte) (res model.DriverDetails, err *helper.ErrorStruct)
 	GetStatus(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
 	SetStatus(c context.Context, id string, data dto.StatusReq) (res interface{}, err *helper.ErrorStruct)
 	GetTripHistories(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
@@ -148,7 +150,7 @@ func (a *driverServiceImpl) GetDriverDetails(c context.Context, id string) (res 
 	}, nil
 }
 
-func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data dto.EditDriverReq) (res model.DriverDetails, err *helper.ErrorStruct) {
+func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data dto.EditDriverReq, image []byte) (res model.DriverDetails, err *helper.ErrorStruct) {
 	if err := helper.Validate.Struct(&data); err != nil {
 		return res, &helper.ErrorStruct{
 			Code: fiber.StatusBadRequest,
@@ -156,11 +158,16 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 		}
 	}
 
+	timestamp := time.Now().Format("20060102_150405")
+	fullPath := id + "_" + timestamp
+	filePath := filepath.Join("./uploads", fullPath)
+
 	driver := model.DriverDetails{
-		ID:            id,
-		Name:          data.Name,
-		LicenseNumber: data.LicenseNumber,
-		SIM:           data.SIM,
+		ID:             id,
+		Name:           data.Name,
+		LicenseNumber:  data.LicenseNumber,
+		SIM:            data.SIM,
+		ProfilePicture: filePath,
 	}
 
 	resRepo, errRepo := a.repo.EditDriverDetails(c, driver)
@@ -171,6 +178,8 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 			Code: http.StatusInternalServerError,
 		}
 	}
+
+	os.WriteFile(filePath, image, 0644)
 
 	return resRepo, nil
 }

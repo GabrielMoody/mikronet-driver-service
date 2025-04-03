@@ -19,7 +19,7 @@ type DriverRepo interface {
 	DeleteDriver(c context.Context, id string) (model.DriverDetails, error)
 	GetStatus(c context.Context, id string) (res interface{}, err error)
 	SetStatus(c context.Context, status string, id string) (res interface{}, err error)
-	GetTripHistories(c context.Context, id string) (res []model.Transaction, err error)
+	GetTripHistories(c context.Context, id string) (res []model.Histories, err error)
 	GetAllDriverLastSeen(c context.Context) (res []model.DriverDetails, err error)
 	SetLastSeen(c context.Context, id string) (res *time.Time, err error)
 	GetQrisData(c context.Context, id string) (res *string, err error)
@@ -120,8 +120,12 @@ func (a *DriverRepoImpl) EditDriverDetails(c context.Context, driver model.Drive
 	return driver, nil
 }
 
-func (a *DriverRepoImpl) GetTripHistories(c context.Context, id string) (res []model.Transaction, err error) {
-	if err := a.db.WithContext(c).Find(&res, "driver_id = ?", id).Error; err != nil {
+func (a *DriverRepoImpl) GetTripHistories(c context.Context, id string) (res []model.Histories, err error) {
+	if err := a.db.WithContext(c).Table("transactions").
+		Select("transactions.id as id, passenger_details.name as passenger_name, driver_details.name as driver_name, transactions.amount as amount, transactions.created_at").
+		Joins("JOIN passenger_details on passenger_details.id = transactions.passenger_id").
+		Joins("JOIN driver_details on driver_details.id = transactions.driver_id").
+		Where("driver_id = ?", id).Scan(&res).Error; err != nil {
 		return nil, helper.ErrDatabase
 	}
 

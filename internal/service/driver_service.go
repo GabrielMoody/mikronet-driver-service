@@ -21,7 +21,7 @@ type DriverService interface {
 	EditDriverDetails(c context.Context, id string, data dto.EditDriverReq, image []byte) (res model.DriverDetails, err *helper.ErrorStruct)
 	GetStatus(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
 	SetStatus(c context.Context, id string, data dto.StatusReq) (res interface{}, err *helper.ErrorStruct)
-	GetTripHistories(c context.Context, id string) (res interface{}, err *helper.ErrorStruct)
+	GetTripHistories(c context.Context, id string) (res []model.Histories, err *helper.ErrorStruct)
 	GetImage(c context.Context, id string) (res string, err *helper.ErrorStruct)
 	GetAllLastSeen(c context.Context) (res []model.DriverDetails, err *helper.ErrorStruct)
 	SetLastSeen(c context.Context, id string) (res *time.Time, err *helper.ErrorStruct)
@@ -184,7 +184,7 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 	return resRepo, nil
 }
 
-func (a *driverServiceImpl) GetTripHistories(c context.Context, id string) (res interface{}, err *helper.ErrorStruct) {
+func (a *driverServiceImpl) GetTripHistories(c context.Context, id string) (res []model.Histories, err *helper.ErrorStruct) {
 	resRepo, errRepo := a.repo.GetTripHistories(c, id)
 
 	if errRepo != nil {

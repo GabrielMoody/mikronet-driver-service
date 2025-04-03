@@ -26,6 +26,7 @@ func DriverHandler(r fiber.Router, db *gorm.DB) {
 	api.Get("/status/", controllerDriver.GetStatus)
 	api.Put("/status/", controllerDriver.SetStatus)
 	api.Get("/code/", controllerDriver.GetQrisData)
+	api.Get("/trips/", controllerDriver.GetTripHistories)
 
 	api.Post("/heartbeat/", controllerDriver.SetDriverLastSeen)
 }

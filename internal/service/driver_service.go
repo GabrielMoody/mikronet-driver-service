@@ -163,11 +163,14 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 	filePath := filepath.Join("./uploads", fullPath)
 
 	driver := model.DriverDetails{
-		ID:             id,
-		Name:           data.Name,
-		LicenseNumber:  data.LicenseNumber,
-		SIM:            data.SIM,
-		ProfilePicture: filePath,
+		ID:            id,
+		Name:          data.Name,
+		LicenseNumber: data.LicenseNumber,
+		SIM:           data.SIM,
+	}
+
+	if len(image) > 0 {
+		driver.ProfilePicture = filePath
 	}
 
 	resRepo, errRepo := a.repo.EditDriverDetails(c, driver)
@@ -179,7 +182,9 @@ func (a *driverServiceImpl) EditDriverDetails(c context.Context, id string, data
 		}
 	}
 
-	os.WriteFile(filePath, image, 0644)
+	if len(image) > 0 {
+		os.WriteFile(filePath, image, 0644)
+	}
 
 	return resRepo, nil
 }

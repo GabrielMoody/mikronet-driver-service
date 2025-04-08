@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"errors"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -175,6 +175,7 @@ func (a *DriverControllerImpl) EditDriver(c *fiber.Ctx) error {
 	ctx := c.Context()
 
 	var data dto.EditDriverReq
+	var fileDataPP []byte
 
 	if err := c.BodyParser(&data); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -184,19 +185,17 @@ func (a *DriverControllerImpl) EditDriver(c *fiber.Ctx) error {
 	}
 
 	image, err := c.FormFile("profile_picture")
-	if err != nil && !errors.Is(err, http.ErrMissingFile) {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status": "error",
-			"errors": "error reading image",
-		})
-	}
 
-	fileDataPP, err := readImage(image)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status": "error",
-			"errors": err.Error(),
-		})
+	if err != nil || err == http.ErrMissingFile {
+		log.Println("No Image uploaded!")
+	} else {
+		fileDataPP, err = readImage(image)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"status": "error",
+				"errors": err.Error(),
+			})
+		}
 	}
 
 	_, errService := a.service.EditDriverDetails(ctx, payload["id"].(string), data, fileDataPP)
